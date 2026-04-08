@@ -1,0 +1,21 @@
+# Render Blueprint: https://render.com/docs/blueprint-spec
+# After deploy, set mobile/constants/api.js BASE_URL to your web service URL.
+
+databases:
+  - name: drainage-db
+    databaseName: drainage
+    user: drainage
+    plan: free
+
+services:
+  - type: web
+    name: drainage-api
+    runtime: python
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: drainage-db
+          property: connectionString
