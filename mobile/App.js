@@ -47,7 +47,7 @@ function MainTabs() {
         component={ReportScreen}
         options={{
           title: 'Report',
-          tabBarIcon: tabIcon('water', 'water-outline'),
+          tabBarIcon: tabIcon('document-text', 'document-text-outline'),
         }}
       />
       <Tab.Screen
