@@ -11,7 +11,7 @@ import {
 import { useFocusEffect } from '@react-navigation/native';
 import ComplaintCard from '../components/ComplaintCard';
 import { COLORS } from '../constants/colors';
-import { apiUrl } from '../constants/api';
+import { apiFetch, apiUrl } from '../constants/api';
 
 const FILTERS = [
   { key: 'all', label: 'All' },
@@ -32,7 +32,7 @@ export default function AllComplaintsScreen() {
   const [refreshing, setRefreshing] = useState(false);
 
   const load = useCallback(async () => {
-    const res = await fetch(apiUrl('/complaints'));
+    const res = await apiFetch(apiUrl('/complaints'));
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     setItems(Array.isArray(data) ? data : []);

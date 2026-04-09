@@ -11,9 +11,9 @@ import {
 import { useFocusEffect } from '@react-navigation/native';
 import StatusBadge from '../components/StatusBadge';
 import { COLORS } from '../constants/colors';
-import { apiUrl } from '../constants/api';
+import { apiFetch, apiUrl } from '../constants/api';
 
-const ADMIN_PASSWORD = 'admin123';
+const ADMIN_PASSWORD = 'admin';
 const STATUS_OPTIONS = [
   { value: 'submitted', label: 'Submitted' },
   { value: 'under_review', label: 'Under review' },
@@ -28,7 +28,7 @@ export default function AdminScreen() {
   const [loading, setLoading] = useState(false);
 
   const load = useCallback(async () => {
-    const res = await fetch(apiUrl('/complaints'));
+    const res = await apiFetch(apiUrl('/complaints'));
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     setItems(Array.isArray(data) ? data : []);
@@ -76,7 +76,7 @@ export default function AdminScreen() {
 
   const setStatus = async (complaintId, status) => {
     try {
-      const res = await fetch(apiUrl(`/complaints/${encodeURIComponent(complaintId)}/status`), {
+      const res = await apiFetch(apiUrl(`/complaints/${encodeURIComponent(complaintId)}/status`), {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status }),

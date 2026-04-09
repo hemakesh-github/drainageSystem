@@ -8,7 +8,7 @@ import {
 } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { COLORS } from '../constants/colors';
-import { apiUrl } from '../constants/api';
+import { apiFetch, apiUrl } from '../constants/api';
 
 export default function HomeScreen() {
   const navigation = useNavigation();
@@ -18,7 +18,7 @@ export default function HomeScreen() {
   const load = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await fetch(apiUrl('/complaints'));
+      const res = await apiFetch(apiUrl('/complaints'));
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       setTotal(Array.isArray(data) ? data.length : 0);

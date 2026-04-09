@@ -12,7 +12,7 @@ import {
 import * as ImagePicker from 'expo-image-picker';
 import { Picker } from '@react-native-picker/picker';
 import { COLORS } from '../constants/colors';
-import { apiUrl } from '../constants/api';
+import { apiFetch, apiUrl, formatFailedResponse } from '../constants/api';
 
 const ISSUE_TYPES = [
   { value: 'blocked', label: 'Blocked Drain' },
@@ -67,8 +67,9 @@ export default function ReportScreen() {
     setSubmitting(true);
     let complaintId = null;
 
+    const createUrl = apiUrl('/complaints');
     try {
-      const res = await fetch(apiUrl('/complaints'), {
+      const res = await apiFetch(createUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -85,11 +86,11 @@ export default function ReportScreen() {
       try {
         data = text ? JSON.parse(text) : {};
       } catch {
-        throw new Error(text || `Server error (${res.status})`);
+        throw new Error(text ? `${text}\nURL: ${createUrl}` : `Server error (${res.status})\nURL: ${createUrl}`);
       }
 
       if (!res.ok) {
-        throw new Error(data.detail || data.message || `Request failed (${res.status})`);
+        throw new Error(formatFailedResponse(res, data, createUrl));
       }
 
       complaintId = data.complaint_id;
@@ -102,22 +103,23 @@ export default function ReportScreen() {
           type: 'image/jpeg',
         });
 
-        const up = await fetch(apiUrl(`/complaints/${complaintId}/upload`), {
+        const uploadUrl = apiUrl(`/complaints/${complaintId}/upload`);
+        const up = await apiFetch(uploadUrl, {
           method: 'POST',
           body: form,
         });
         const upText = await up.text();
         if (!up.ok) {
-          let detail = upText;
+          let parsed = {};
           try {
-            const j = JSON.parse(upText);
-            detail = j.detail || j.message || upText;
+            parsed = upText ? JSON.parse(upText) : {};
           } catch {
             /* keep text */
           }
+          const detail = formatFailedResponse(up, parsed, uploadUrl);
           Alert.alert(
             'Complaint created',
-            `Your ID is ${complaintId}, but the photo upload failed: ${detail}`
+            `Your ID is ${complaintId}, but the photo upload failed:\n${detail}`
           );
           clearForm();
           return;

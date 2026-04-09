@@ -1,3 +1,5 @@
+import logging
+import time
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 from pathlib import Path
@@ -6,6 +8,8 @@ from uuid import uuid4
 from fastapi import Depends, FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.requests import Request
 from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.dialects.sqlite import insert as sqlite_insert
@@ -17,6 +21,53 @@ from schemas import ComplaintCreate, ComplaintOut, StatusUpdate
 
 ISSUE_TYPES = frozenset({"blocked", "overflow", "open_drain", "stagnant"})
 STATUSES = frozenset({"submitted", "under_review", "in_progress", "resolved"})
+
+LOG = logging.getLogger("drainage.api")
+if not logging.getLogger().handlers:
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+    )
+LOG.setLevel(logging.INFO)
+
+
+class RequestLogMiddleware(BaseHTTPMiddleware):
+    """Log every HTTP request: client, method, path, status, duration, optional content-length."""
+
+    async def dispatch(self, request: Request, call_next):
+        start = time.perf_counter()
+        client = request.client.host if request.client else "-"
+        path = request.url.path
+        query = request.url.query
+        path_q = f"{path}?{query}" if query else path
+        content_length = request.headers.get("content-length", "-")
+
+        try:
+            response = await call_next(request)
+        except Exception:
+            elapsed_ms = (time.perf_counter() - start) * 1000
+            LOG.exception(
+                "%s | %s %s | error after %.2fms | content-length=%s",
+                client,
+                request.method,
+                path_q,
+                elapsed_ms,
+                content_length,
+            )
+            raise
+
+        elapsed_ms = (time.perf_counter() - start) * 1000
+        LOG.info(
+            "%s | %s %s -> %s | %.2fms | content-length=%s",
+            client,
+            request.method,
+            path_q,
+            response.status_code,
+            elapsed_ms,
+            content_length,
+        )
+        return response
 
 UPLOAD_DIR = Path(__file__).resolve().parent / "uploads"
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
@@ -58,6 +109,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.add_middleware(RequestLogMiddleware)
 
 app.mount("/uploads", StaticFiles(directory=str(UPLOAD_DIR)), name="uploads")
 

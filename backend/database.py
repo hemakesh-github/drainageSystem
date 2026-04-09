@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
@@ -6,7 +7,10 @@ from sqlalchemy.orm import declarative_base, sessionmaker
 
 load_dotenv()
 
-_raw_url = os.getenv("DATABASE_URL", "postgresql://localhost:5432/drainage")
+_backend_dir = Path(__file__).resolve().parent
+_default_sqlite = (_backend_dir / "drainage.db").resolve()
+# Local default: SQLite file in backend/. Set DATABASE_URL for PostgreSQL (e.g. Render).
+_raw_url = os.getenv("DATABASE_URL", f"sqlite:///{_default_sqlite.as_posix()}")
 if _raw_url.startswith("postgres://"):
     _raw_url = _raw_url.replace("postgres://", "postgresql://", 1)
 

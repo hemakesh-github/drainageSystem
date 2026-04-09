@@ -10,7 +10,7 @@ import {
   View,
 } from 'react-native';
 import { COLORS } from '../constants/colors';
-import { apiUrl, imageUrl } from '../constants/api';
+import { apiFetch, apiUrl, imageUrl } from '../constants/api';
 import StatusBadge from '../components/StatusBadge';
 
 const STEPS = [
@@ -41,7 +41,7 @@ export default function TrackScreen() {
     setLoading(true);
     setComplaint(null);
     try {
-      const res = await fetch(apiUrl(`/complaints/${encodeURIComponent(id)}`));
+      const res = await apiFetch(apiUrl(`/complaints/${encodeURIComponent(id)}`));
       const text = await res.text();
       let data;
       try {
